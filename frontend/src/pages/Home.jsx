@@ -6,8 +6,8 @@ import PropertyMap from '../components/PropertyMap'
 import { Search, MapPin, Calendar, Users, Star, Home as HomeIcon, Waves, Wifi, TreePine, Castle, Map as MapIcon, List } from 'lucide-react'
 
 export default function Home() {
-  const [properties, setProperties] = useState([])
   const [allProperties, setAllProperties] = useState([])
+  const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState('list')
   const [selectedProperty, setSelectedProperty] = useState(null)
@@ -17,60 +17,92 @@ export default function Home() {
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
   const [guests, setGuests] = useState(1)
+  const [selectedCategory, setSelectedCategory] = useState('')
   
-  // Fechas para el backend
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const categories = [
+    { name: "Cabañas", icon: HomeIcon, keywords: ["cabaña", "cabañas", "campestre", "rural", "madera"] },
+    { name: "Frente al mar", icon: Waves, keywords: ["mar", "playa", "oceano", "caribe", "frente al mar", "costero", "playa"] },
+    { name: "Piscina", icon: HomeIcon, keywords: ["piscina", "pool", "alberca"] },
+    { name: "Vistas increíbles", icon: Star, keywords: ["vista", "mirador", "panorámica", "montaña", "increíble"] },
+    { name: "Diseño moderno", icon: HomeIcon, keywords: ["moderno", "contemporáneo", "diseño", "lujo", "premium"] },
+    { name: "Wifi alto", icon: Wifi, keywords: ["wifi", "internet"] },
+    { name: "Naturaleza", icon: TreePine, keywords: ["naturaleza", "ecológico", "bosque", "jardín", "verde"] },
+    { name: "Castillos", icon: Castle, keywords: ["castillo", "medieval"] }
+  ]
 
+  // Cargar todas las propiedades al inicio
   useEffect(() => {
-    const fetchProperties = async () => {
+    const fetchAllProperties = async () => {
       try {
-        // Construir URL con filtros
-        let url = '/properties?'
-        if (searchCity) url += `city=${searchCity}&`
-        if (startDate) url += `startDate=${startDate}&`
-        if (endDate) url += `endDate=${endDate}&`
-        if (guests > 1) url += `guests=${guests}&`
-        
-        const { data } = await api.get(url)
-        setProperties(data)
+        const { data } = await api.get('/properties')
         setAllProperties(data)
+        setProperties(data)
       } catch (error) {
         console.error('Error:', error)
       } finally {
         setLoading(false)
       }
     }
-    fetchProperties()
-  }, [searchCity, startDate, endDate, guests])
+    fetchAllProperties()
+  }, [])
 
-  const handleSearch = () => {
-    // Convertir fechas al formato ISO para el backend
-    if (checkIn) setStartDate(new Date(checkIn).toISOString())
-    if (checkOut) setEndDate(new Date(checkOut).toISOString())
-    // Forzar recarga
-    setLoading(true)
-  }
+  // Filtrar propiedades cuando cambian los filtros
+  useEffect(() => {
+    let filtered = [...allProperties]
+
+    // Filtrar por ciudad
+    if (searchCity) {
+      filtered = filtered.filter(p => 
+        p.city?.toLowerCase().includes(searchCity.toLowerCase())
+      )
+    }
+
+    // Filtrar por categoría
+    if (selectedCategory) {
+      const category = categories.find(c => c.name === selectedCategory)
+      if (category) {
+        filtered = filtered.filter(property => {
+          // Buscar en título
+          const titleMatch = category.keywords.some(k => 
+            property.title?.toLowerCase().includes(k.toLowerCase())
+          )
+          // Buscar en descripción
+          const descMatch = category.keywords.some(k => 
+            property.description?.toLowerCase().includes(k.toLowerCase())
+          )
+          // Buscar en amenities
+          const amenitiesMatch = category.keywords.some(k => 
+            property.amenities?.some(a => a.toLowerCase().includes(k.toLowerCase()))
+          )
+          return titleMatch || descMatch || amenitiesMatch
+        })
+      }
+    }
+
+    // Filtrar por huéspedes
+    if (guests > 1) {
+      filtered = filtered.filter(p => p.maxGuests >= guests)
+    }
+
+    setProperties(filtered)
+  }, [searchCity, selectedCategory, guests, allProperties])
 
   const handleClearFilters = () => {
     setSearchCity('')
     setCheckIn('')
     setCheckOut('')
     setGuests(1)
-    setStartDate('')
-    setEndDate('')
+    setSelectedCategory('')
+    setProperties(allProperties)
   }
 
-  const categories = [
-    { name: "Cabañas", icon: HomeIcon },
-    { name: "Frente al mar", icon: Waves },
-    { name: "Piscina", icon: HomeIcon },
-    { name: "Vistas increíbles", icon: Star },
-    { name: "Diseño moderno", icon: HomeIcon },
-    { name: "Wifi alto", icon: Wifi },
-    { name: "Naturaleza", icon: TreePine },
-    { name: "Castillos", icon: Castle }
-  ]
+  const handleCategoryClick = (categoryName) => {
+    if (selectedCategory === categoryName) {
+      setSelectedCategory('') // Deseleccionar si ya está seleccionada
+    } else {
+      setSelectedCategory(categoryName)
+    }
+  }
 
   if (loading) {
     return (
@@ -104,7 +136,7 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Search Bar Funcional */}
+            {/* Search Bar */}
             <div className="bg-white rounded-2xl shadow-xl max-w-4xl mx-auto border">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
                 <div className="p-4 border-b sm:border-b-0 sm:border-r">
@@ -153,10 +185,8 @@ export default function Home() {
                       onChange={(e) => setGuests(Number(e.target.value))}
                       className="w-full outline-none text-sm bg-transparent"
                     >
-                      {[1,2,3,4,5,6,7,8,9,10].map(num => (
-                        <option key={num} value={num}>
-                          {num} huésped{num !== 1 ? 'es' : ''}
-                        </option>
+                      {[1,2,3,4,5,6,7,8].map(num => (
+                        <option key={num} value={num}>{num} huésped{num !== 1 ? 'es' : ''}</option>
                       ))}
                     </select>
                   </div>
@@ -169,10 +199,7 @@ export default function Home() {
                 >
                   Limpiar filtros
                 </button>
-                <button 
-                  onClick={handleSearch}
-                  className="bg-gray-900 text-white px-8 py-2 rounded-full hover:bg-gray-800 transition flex items-center gap-2"
-                >
+                <button className="bg-gray-900 text-white px-8 py-2 rounded-full hover:bg-gray-800 transition flex items-center gap-2">
                   <Search size={18} />
                   Buscar
                 </button>
@@ -181,12 +208,34 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Resultados de búsqueda */}
+        {/* Indicador de filtros activos */}
+        {(searchCity || selectedCategory || guests > 1) && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm text-gray-500">Filtros activos:</span>
+              {searchCity && (
+                <span className="bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full">
+                  📍 {searchCity}
+                </span>
+              )}
+              {selectedCategory && (
+                <span className="bg-green-100 text-green-700 text-sm px-3 py-1 rounded-full">
+                  🏷️ {selectedCategory}
+                </span>
+              )}
+              {guests > 1 && (
+                <span className="bg-purple-100 text-purple-700 text-sm px-3 py-1 rounded-full">
+                  👥 {guests} huéspedes
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Resultados */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <p className="text-sm text-gray-500">
             {properties.length} {properties.length === 1 ? 'propiedad encontrada' : 'propiedades encontradas'}
-            {searchCity && ` en ${searchCity}`}
-            {checkIn && checkOut && ` del ${new Date(checkIn).toLocaleDateString()} al ${new Date(checkOut).toLocaleDateString()}`}
           </p>
         </div>
 
@@ -226,28 +275,6 @@ export default function Home() {
               onPropertySelect={setSelectedProperty}
               selectedPropertyId={selectedProperty?._id}
             />
-            {selectedProperty && (
-              <div className="mt-4 p-4 bg-white rounded-lg border shadow-sm">
-                <div className="flex gap-4">
-                  <img
-                    src={selectedProperty.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
-                    alt={selectedProperty.title}
-                    className="w-24 h-24 object-cover rounded-lg"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{selectedProperty.title}</h3>
-                    <p className="text-gray-500 text-sm">{selectedProperty.city}</p>
-                    <p className="text-primary font-semibold">${selectedProperty.pricePerNight?.toLocaleString()} COP / noche</p>
-                  </div>
-                  <Link
-                    to={`/property/${selectedProperty._id}`}
-                    className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition self-center"
-                  >
-                    Ver detalles
-                  </Link>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -260,13 +287,21 @@ export default function Home() {
                 {categories.map((cat, idx) => (
                   <button 
                     key={idx} 
-                    onClick={() => setSearchCity(cat.name === "Cabañas" ? "Cabañas" : cat.name)}
-                    className="flex flex-col items-center min-w-[70px] group"
+                    onClick={() => handleCategoryClick(cat.name)}
+                    className={`flex flex-col items-center min-w-[70px] group transition-all`}
                   >
-                    <div className="p-3 rounded-full bg-gray-100 group-hover:bg-gray-200 transition">
-                      <cat.icon size={20} className="text-gray-700" />
+                    <div className={`p-3 rounded-full transition-all ${
+                      selectedCategory === cat.name
+                        ? 'bg-primary text-white shadow-lg scale-110'
+                        : 'bg-gray-100 text-gray-700 group-hover:bg-gray-200'
+                    }`}>
+                      <cat.icon size={20} />
                     </div>
-                    <span className="text-xs text-gray-500 mt-2">{cat.name}</span>
+                    <span className={`text-xs mt-2 ${
+                      selectedCategory === cat.name ? 'text-primary font-semibold' : 'text-gray-500'
+                    }`}>
+                      {cat.name}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -278,7 +313,7 @@ export default function Home() {
                 Alojamientos destacados
               </h2>
               {properties.length === 0 ? (
-                <div className="text-center py-12">
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
                   <p className="text-gray-500">No se encontraron propiedades con esos criterios</p>
                   <button 
                     onClick={handleClearFilters}
