@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "amanecer-cpm": {
+      "frontend": {
+        "entrypoint": "frontend"
+      }
+    }
+  }
+}
