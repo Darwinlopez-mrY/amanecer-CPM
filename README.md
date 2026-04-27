@@ -7,33 +7,34 @@ Plataforma de alquiler de propiedades en Colombia.
 ```bash
 git clone https://github.com/Darwinlopez-mrY/amanecer-CPM.git
 cd amanecer-CPM
+(abrimos dos terminalesen las dos escribimos)
 git checkout entrega
+
 Configuración
-Backend:
 
-bash
+(terminal 1)
+Backend:
 cd backend
 cp .env.example .env
 npm install
+
+(terminal 2)
 Frontend:
-
-bash
 cd frontend
 cp .env.example .env
 npm install
-Ejecución
-Backend:
 
-bash
+Ejecución
+
+Backend:
 cd backend
 npm run dev
-Frontend (otra terminal):
 
-bash
+Frontend (otra terminal):
 cd frontend
 npm run dev
+
 Credenciales
 Email: guelopezadrian@gmail.com
-
 Contraseña: admin123
 
