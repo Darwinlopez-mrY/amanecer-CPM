@@ -5,6 +5,8 @@ Plataforma de alquiler de propiedades en Colombia.
 ## Instalación
 
 ```bash
+sudo apt update && apt upgrade -y
+sudo apt install npm -y
 git clone https://github.com/Darwinlopez-mrY/amanecer-CPM.git
 (abrimos dos terminales, en las dos escribimos)
 cd amanecer-CPM
