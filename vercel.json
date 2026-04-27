@@ -1,9 +1,17 @@
 {
-  "projects": {
-    "amanecer-cpm": {
-      "frontend": {
-        "entrypoint": "frontend"
+  "builds": [
+    {
+      "src": "frontend/**",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "frontend/dist"
       }
     }
-  }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/dist/$1"
+    }
+  ]
 }
