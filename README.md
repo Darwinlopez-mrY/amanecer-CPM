@@ -6,8 +6,8 @@ Plataforma de alquiler de propiedades en Colombia.
 
 ```bash
 git clone https://github.com/Darwinlopez-mrY/amanecer-CPM.git
-cd amanecer-CPM
 (abrimos dos terminales, en las dos escribimos)
+cd amanecer-CPM
 git checkout entrega
 
 Configuración
